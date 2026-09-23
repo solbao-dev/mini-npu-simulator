@@ -1,101 +1,99 @@
-# 🚀 Mini NPU Simulator
+# Mini NPU Simulator
 
-본 프로젝트는 NPU의 핵심인 **MAC(Multiply-Accumulate) 연산**을 시뮬레이션하고, 다양한 크기의 패턴을 필터와 비교하여 형태를 판정하는 엔진입니다. 특히 안정적인 예외 처리와 정밀한 판정 로직 구현에 집중했습니다.
+> A lightweight NPU simulation project that implements MAC operations and pattern classification from scratch.
+
+**CODYSSEY · Foundation Program**  
+`Python` `Algorithms` `MAC Operations` `JSON` `Error Handling`
+
+## Overview
+
+This project simulates **MAC (Multiply-Accumulate)** operations, one of the core computational ideas behind NPUs, and compares input patterns against filters to classify their shapes. The implementation focuses on explicit computation, numerical reliability, modular structure, and user-friendly input validation.
+
+Rather than relying on NumPy, the core MAC operation is implemented directly in Python so that the underlying computation can be understood and explained.
+
+## Architecture
+
+```text
+mini-npu-simulator/
+├── main.py
+├── core/
+│   └── npu_core.py
+├── data/
+│   └── data.json
+└── utils/
+    └── reporter.py
+```
+
+- `main.py` — entry point and interaction flow
+- `core/npu_core.py` — MAC computation, epsilon policy, and label normalization
+- `data/data.json` — filters and test patterns
+- `utils/reporter.py` — test and performance reporting
+
+## Key Implementation
+
+### MAC operation
+
+The MAC calculation is implemented with nested loops without external numerical libraries. For an `N × N` matrix, every element is visited once, resulting in **O(N²)** time complexity.
+
+### Numerical reliability
+
+Floating-point comparisons use an epsilon of `1e-9`. When two scores differ by less than the threshold, the result is classified as `Unknown` rather than forcing an unreliable decision.
+
+### Label normalization
+
+Inputs such as `+`, `cross`, and `x` are normalized into consistent labels before comparison.
+
+### Input validation & UX
+
+- Invalid rows can be re-entered without restarting the entire input process.
+- Parsing, length, and range errors use separate messages.
+- Input values are restricted to `0` and `1` before computation.
+- `Ctrl+C` exits cleanly without exposing a traceback.
+
+## Results
+
+The JSON analysis mode contains 10 test cases:
+
+- **8 PASS**
+- **2 policy-driven FAIL cases**
+
+The two non-matching cases were analyzed rather than hidden: one pattern scores more strongly against the Cross filter despite its label, while another falls inside the epsilon threshold and is intentionally classified as `Unknown`.
+
+## Troubleshooting
+
+**Floating-point comparison** — replaced direct score comparison with an epsilon-based decision rule.
+
+**Import/file naming errors** — corrected a `reporter.py` filename typo and made package paths explicit.
+
+**Module resolution** — standardized execution from the project root and used explicit package imports.
+
+## Run
+
+```bash
+python main.py
+```
+
+Choose:
+
+```text
+1  Keyboard input
+2  JSON analysis
+```
+
+Example 3×3 Cross input:
+
+```text
+0 1 0
+1 1 1
+0 1 0
+```
+
+Expected classification: `Cross`.
+
+## What I Learned
+
+This project was an early step in my software-development journey: moving from using software to reasoning about computation directly. It helped me connect nested-loop complexity, numerical precision, modular architecture, validation, and user experience in one small system.
 
 ---
 
-## 📂 프로젝트 구조 (Modular Architecture)
-관심사 분리(SoC) 원칙에 따라 기능을 세분화하여 관리 효율을 극대화했습니다.
-
-* **`main.py`**: 프로그램의 Entry Point. 모드 선택 및 사용자 UI 흐름 제어.
-* **`core/npu_core.py`**: MAC 연산, 부동소수점 오차 제어(Epsilon), 라벨 정규화 등 핵심 엔진.
-* **`data/data.json`**: 분석용 필터 및 패턴 리소스 (N=3, 5, 7 등 포함).
-* **`utils/reporter.py`**: 성능 측정 결과 및 테스트 요약 리포트 출력 전담.
-
----
-
-## 🛠 실행 방법 및 환경
-1.  **실행**: `python main.py`
-2.  **모드 선택**: `1`(키보드 입력), `2`(JSON 분석) 중 선택
-3.  **데이터 위치**: `data/data.json` (폴더 구조화 완료)
-
----
-
-## 🧠 구현 요약
-
-### 1. MAC 연산 및 복잡도
-* **직접 구현**: `numpy` 등 외부 라이브러리 없이 2중 `for`문으로 순수 파이썬 구현.
-* **시간 복잡도**: $N \times N$ 행렬 전체를 순회하므로 **$O(N^2)$**의 복잡도를 가짐.
-* **근거**: $N=3$일 때 9회, $N=5$일 때 25회로 연산량이 제곱에 비례하여 증가함을 확인.
-
-### 2. 성능 및 시간 복잡도 분석 ($O(N^2)$)
-* MAC 연산은 행렬의 크기 $N$에 대해 $N \times N$번의 반복이 필요하므로 시간 복잡도는 **$O(N^2)$**입니다. 크기가 커질수록 처리 시간이 기하급수적으로 증가하는 것을 성능 분석 표를 통해 확인하였으며, 이는 대규모 연산에서 하드웨어 가속(NPU)이 필요한 이유를 시사합니다.
-
-### 3. 정밀도 및 정책
-* **Epsilon 정책**: 부동소수점 오차 방지를 위해 `1e-9` 기준 적용. 두 점수의 차가 이보다 작으면 `Unknown`으로 판정.
-* **라벨 정규화**: `+`, `cross`, `x` 등 다양한 입력을 `Cross`와 `X`로 표준화하여 정답 비교 로직의 일관성 확보.
-
----
-
-## 📊 결과 리포트 (Mode 2 분석)
-
-### 1. 테스트 요약
-* **총 테스트 케이스**: 10건
-* **통과(PASS)**: 8건
-* **실패(FAIL)**: 2건 (의도된 예외 테스트 케이스)
-
-### 5-1. FAIL 케이스 원인 분석 (총 2건)
-
-본 시뮬레이션에서 발생한 2건의 FAIL은 알고리즘의 '오류'가 아닌, **설계된 정책에 따른 정상적인 결과**입니다.
-
-1. **`size_5_4` (판정: Cross / 정답: X)**
-   - **원인**: 패턴 내 픽셀 분포가 수학적으로 십자가(Cross) 필터와 더 높은 유사도를 가짐.
-   - **통찰**: 단순 MAC 연산 기반 NPU가 가진 '복잡 패턴 판별의 한계'를 보여주는 케이스입니다.
-
-2. **`size_13_3` (판정: Unknown / 정답: Cross)**
-   - **원인**: 두 필터의 MAC 점수 차이가 설정한 허용 오차(epsilon, 1e-9)보다 작아 '판정 불가'로 분류됨.
-   - **통찰**: 부동소수점 오차로 인한 잘못된 판정을 방지하기 위해 도입한 **방어 로직(Unknown 정책)이 의도대로 작동**했음을 증명합니다.
-
----
-
-## 🔧 트러블슈팅 (Troubleshooting)
-
-### 1. [로직] 부동소수점 비교 오류
-* **문제**: 아주 미세한 점수 차이임에도 컴퓨터가 A > B를 다르게 인식하여 동점 케이스가 FAIL로 처리됨.
-* **해결**: `get_decision` 함수에 `abs(sc_cross - sc_x) < epsilon` 로직을 추가하여 판정 신뢰도 확보.
-
-### 2. [구조] 파일명 오타 및 Import 에러
-* **문제**: `utils/reporter.py` 생성 시 `repoter.py`로 오타를 내어 `ModuleNotFoundError` 발생.
-* **해결**: 파일명 수정 및 `main.py`의 `from utils.reporter import ...` 경로 재검토.
-
-### 3. [구조] 모듈 인식 실패
-* **문제**: 폴더를 나눈 후 `npu_core`를 불러오지 못함.
-* **해결**: `from core.npu_core import ...`와 같이 패키지 경로를 명시하고, 실행 위치를 최상위 디렉토리로 고정하여 해결.
-
----
-
-## ✅ 재현성 확인 데이터
-
-### 모드 1 (직접 입력 테스트)
-* **입력 데이터 (3x3 십자가)**:
-    ```text
-    0 1 0
-    1 1 1
-    0 1 0
-    ```
-* **결과**: `A 점수: 5.0, B 점수: 1.0` ➡️ **판정: A (Cross) 정상 출력** 확인.
-
-### 모드 2 (JSON 분석 테스트)
-* `data/data.json` 위치에 파일을 두고 실행 시, 상기 기술한 **8 PASS / 2 FAIL** 결과가 요약 리포트에 정확히 집계됨을 확인.
-* 잘못된 행 길이 입력 시 "❌ 입력 형식 오류" 메시지와 함께 재입력 루프가 정상 작동함.
-
----
-
-## ✅ 사용자 경험(UX) 기반 입력 검증 시스템
-- **행 단위 검증 루프**: 3x3 입력 시 오타가 발생하면 전체를 다시 입력해야 했던 불편함을 개선하여, 오류가 발생한 '해당 행'만 즉시 재입력받도록 로직을 고도화했습니다.    
-
-- **다중 에러 메시지**: 파싱 오류(숫자 아님), 개수 오류(3개 미만/초과), 범위 오류(0/1 외 숫자)를 세분화하여 사용자에게 명확한 가이드를 제공합니다.    
-
-- **데이터 무결성 확보**: 입력 단계에서 0과 1만을 강제함으로써 MAC 연산 결과의 신뢰성을 확보했습니다.    
-
-- **강제 종료 대응**: 사용자가 `Ctrl + C`로 프로그램을 중단할 경우, 시스템 에러(Traceback) 대신 친절한 종료 메시지를 출력하고 안전하게 프로세스를 종료하도록 처리했습니다. 이는 사용자에게 시각적편안함 및 안전한 종료로 서비스에 대한 신뢰를 보장합니다.
+Part of my **CODYSSEY Foundation Program** learning journey.
